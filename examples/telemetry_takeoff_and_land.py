@@ -9,7 +9,8 @@ async def run():
     This is the "main" function.
     It first creates the drone object and initializes it.
 
-    Then it registers tasks to be run in parallel (one can think of them as threads):
+    Then it registers tasks to be run in parallel (one can think of them as
+    threads):
         - print_altitude: print the altitude
         - print_flight_mode: print the flight mode
         - observe_is_in_air: this monitors the flight mode and returns when the
@@ -19,13 +20,19 @@ async def run():
     and finally land.
 
     Note that "observe_is_in_air" is not necessary, but it ensures that the
-    script waits until the drone is actually landed, so that we receive feedback
-    during the landing as well.
+    script waits until the drone is actually landed, so that we receive
+    feedback during the landing as well.
     """
 
     # Init the drone
     drone = System()
     await drone.connect(system_address="udp://:14540")
+
+    print("Waiting for drone to connect...")
+    async for state in drone.core.connection_state():
+        if state.is_connected:
+            print(f"Drone discovered with UUID: {state.uuid}")
+            break
 
     # Start parallel tasks
     asyncio.ensure_future(print_altitude(drone))
@@ -44,7 +51,7 @@ async def run():
     print("-- Landing")
     await drone.action.land()
 
-    # Wait until the drone is landed (instead of returning after 'land' is sent)
+    # Wait until the drone is landed (instead of exiting after 'land' is sent)
     await termination_task
 
 

@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Some caveats when attempting to run the examples in non-gps environments:
-
-- `drone.action.arm()` will return a `COMMAND_DENIED` result because the action requires switching
-  to LOITER mode first, something that is currently not supported in a non-gps environment. You will
-  need to temporarily disable this part here:
-  `https://github.com/mavlink/MAVSDK/blob/develop/plugins/action/action_impl.cpp#L61-L65`
-
-- `drone.offboard.stop()` will also return a `COMMAND_DENIED` result because it requires a mode
-  switch to HOLD, something that is currently not supported in a non-gps environment.
-"""
 
 import asyncio
 
@@ -24,6 +13,12 @@ async def run():
     drone = System()
     await drone.connect(system_address="udp://:14540")
 
+    print("Waiting for drone to connect...")
+    async for state in drone.core.connection_state():
+        if state.is_connected:
+            print(f"Drone discovered with UUID: {state.uuid}")
+            break
+
     print("-- Arming")
     await drone.action.arm()
 
@@ -34,7 +29,8 @@ async def run():
     try:
         await drone.offboard.start()
     except OffboardError as error:
-        print(f"Starting offboard mode failed with error code: {error._result.result}")
+        print(f"Starting offboard mode failed with error code: \
+              {error._result.result}")
         print("-- Disarming")
         await drone.action.disarm()
         return
@@ -48,7 +44,8 @@ async def run():
     await asyncio.sleep(4)
 
     print("-- Go South 2 m/s, turn to face West")
-    await drone.offboard.set_velocity_ned(VelocityNedYaw(-2.0, 0.0, 0.0, 270.0))
+    await drone.offboard.set_velocity_ned(
+        VelocityNedYaw(-2.0, 0.0, 0.0, 270.0))
     await asyncio.sleep(4)
 
     print("-- Go West 2 m/s, turn to face East")
@@ -71,7 +68,8 @@ async def run():
     try:
         await drone.offboard.stop()
     except OffboardError as error:
-        print(f"Stopping offboard mode failed with error code: {error._result.result}")
+        print(f"Stopping offboard mode failed with error code: \
+              {error._result.result}")
 
 
 if __name__ == "__main__":

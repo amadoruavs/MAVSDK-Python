@@ -8,6 +8,7 @@ import urllib.request
 import os
 import stat
 import sys
+import subprocess
 
 
 def parse_requirements(filename):
@@ -55,6 +56,8 @@ class custom_build(build):
             return 'manylinux1-x64'
         elif sys.platform.startswith('darwin'):
             return 'macos'
+        elif sys.platform.startswith('win'):
+            return 'win32.exe'
         else:
             raise NotImplementedError(
                 f"Platform {sys.platform} is not (yet) supported by this setup.py!")
@@ -69,7 +72,7 @@ class custom_build(build):
     @property
     def mavsdk_server_tag(self):
         """
-        The release tag of the `mavsdk_server` binary is defined in the file 
+        The release tag of the `mavsdk_server` binary is defined in the file
         "MAVSDK_SERVER_VERSION", and used to download the corresponding release
         """
         with open("MAVSDK_SERVER_VERSION") as mavsdk_server_version_file:
@@ -98,11 +101,22 @@ class custom_build(build):
         os.chmod(self.mavsdk_server_filepath, st.st_mode | stat.S_IEXEC)
 
 
+def version():
+    process = subprocess.Popen(["git", "describe", "--tags"],
+                               stdout=subprocess.PIPE)
+    (output, err) = process.communicate()
+    exit_code = process.wait()
+    if exit_code != 0:
+        raise RuntimeError(f"git describe command exited with: {exit_code}")
+    return output.decode("utf-8").strip()
+
+
 setup(
     name="mavsdk",
-    version="0.2.0",
+    version=version(),
     description="Python wrapper for MAVSDK",
     long_description=parse_long_description(),
+    long_description_content_type="text/markdown",
     url="https://github.com/mavlink/MAVSDK-Python",
     maintainer="Jonas Vautherin, Julian Oes",
     maintainer_email="jonas@auterion.com, julian.oes@auterion.com",

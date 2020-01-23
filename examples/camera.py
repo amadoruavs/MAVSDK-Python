@@ -10,6 +10,12 @@ async def run():
     drone = System()
     await drone.connect(system_address="udp://:14540")
 
+    print("Waiting for drone to connect...")
+    async for state in drone.core.connection_state():
+        if state.is_connected:
+            print(f"Drone discovered with UUID: {state.uuid}")
+            break
+
     asyncio.ensure_future(print_camera_mode(drone))
     asyncio.ensure_future(print_camera_status(drone))
 
@@ -27,12 +33,15 @@ async def run():
     except CameraError as error:
         print(f"Couldn't take photo: {error._result.result}")
 
-    # Shut down the running coroutines (here 'print_camera_mode()' and 'print_camera_status()')
+    # Shut down the running coroutines (here 'print_camera_mode()' and
+    # 'print_camera_status()')
     await asyncio.get_event_loop().shutdown_asyncgens()
+
 
 async def print_camera_mode(drone):
     async for camera_mode in drone.camera.mode():
         print(f"Camera mode: {camera_mode}")
+
 
 async def print_camera_status(drone):
     async for camera_status in drone.camera.camera_status():

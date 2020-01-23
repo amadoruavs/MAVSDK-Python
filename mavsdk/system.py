@@ -12,11 +12,14 @@ class System:
         "Calibration",
         "Camera",
         "Core",
+        "Geofence",
         "Gimbal",
         "Info",
         "Mission",
+        "Mocap",
         "Param",
         "Offboard",
+        "Shell",
         "Telemetry"
     ]
 
@@ -91,6 +94,12 @@ class System:
         return self._plugins["core"]
 
     @property
+    def geofence(self) -> Geofence:
+        if "geofence" not in self._plugins:
+            raise RuntimeError("Geofence plugin has not been initialized! Did you run `System.connect()`?")
+        return self._plugins["geofence"]
+
+    @property
     def gimbal(self) -> Gimbal:
         if "gimbal" not in self._plugins:
             raise RuntimeError("Gimbal plugin has not been initialized! Did you run `System.connect()`?")
@@ -126,6 +135,18 @@ class System:
             raise RuntimeError("Telemetry plugin has not been initialized! Did you run `System.connect()`?")
         return self._plugins["telemetry"]
 
+    @property
+    def shell(self) -> Shell:
+        if "shell" not in self._plugins:
+            raise RuntimeError("Shell plugin has not been initialized! Did you run `System.connect()`?")
+        return self._plugins["shell"]
+
+    @property
+    def mocap(self) -> Mocap:
+        if "mocap" not in self._plugins:
+            raise RuntimeError("Mocap plugin has not been initialized! Did you run `System.connect()`?")
+        return self._plugins["mocap"]
+
     @staticmethod
     def _start_mavsdk_server(system_address=None):
         """
@@ -142,7 +163,7 @@ class System:
             from importlib_resources import path
 
         with path(bin, 'mavsdk_server') as backend:
-            bin_path_and_args = [os.fspath(backend)]
+            bin_path_and_args = [os.fspath(backend), "-p", "50051"]
             if system_address:
                 bin_path_and_args.append(system_address)
             p = subprocess.Popen(bin_path_and_args,
